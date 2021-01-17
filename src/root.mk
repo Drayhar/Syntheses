@@ -35,7 +35,7 @@ else ifeq ($(strip ${TYPE}),formulaire)
 	endif
 else ifeq ($(strip ${TYPE}),exam)
 	OUT_MAIN_NAME:=${OPTION}${CODE}-${YEAR}-${MONTH}
-	ifneq (,$(filter $(strip ${MINMAJ}),Maj Majeure)) 
+	ifneq (,$(filter $(strip ${MINMAJ}),Maj Majeure))
 		OUT_MAIN_NAME:=$(strip $(OUT_MAIN_NAME))-Majeure
 	else ifneq (,$(filter $(strip ${MINMAJ}),Min Mineure))
 		OUT_MAIN_NAME:=$(strip $(OUT_MAIN_NAME))-Mineure
@@ -67,6 +67,13 @@ endef
 # Directory of the script mysmartcp.py
 SMARTCP:=$(BASE_DIR)../../../mysmartcp.py
 
+# Operating system
+ifeq ($(OS),Windows_NT)
+	MYPYTHON:=python
+else
+	MYPYTHON:=python3
+endif
+
 # 1e: make all
 # 2e: make only out-of-date
 # .PHONY: clean cleanaux $(ALL)
@@ -82,11 +89,12 @@ pdf: $(ALL) cleanaux
 release: $(ALL) cleanaux prerelease $(ALL_RELEASE)
 
 prerelease:
-	$(eval MYPATH:=$(shell python3 ${SMARTCP} ${INPUT})) # Obtain the path/location of the output folder for this PDF
-	mkdir -p "${MYPATH}"                                 # Create the output folder (if not existing yet)
+	$(eval MYPATH:=$(shell $(MYPYTHON) ${SMARTCP} ${INPUT})) # Obtain the path/location of the output folder for this PDF
+	mkdir -p "${MYPATH}"                                     # Create the output folder (if not existing yet)
 
 release_$(MAIN_NAME):
-	cp "$(MAIN_NAME).pdf" "${MYPATH}/$(OUT_MAIN_NAME).pdf"         # Copy the PDF in the output folder
+	$(eval OUT_MAIN_NAME_ENCODED:=$(shell $(MYPYTHON) $(BASE_DIR)../../../myencode.py ${OUT_MAIN_NAME})) # Encode special characters in OUT_MAIN_NAME
+	cp "$(MAIN_NAME).pdf" "${MYPATH}/$(OUT_MAIN_NAME_ENCODED).pdf"                                  # Copy the PDF in the output folder
 
 release_$(MAIN_NAME_SOL):
 	cp "$(MAIN_NAME_SOL).pdf" "${MYPATH}/$(OUT_MAIN_NAME_SOL).pdf" # Copy the solution of the PDF in the output folder
@@ -116,4 +124,4 @@ clean: cleanaux
 cleanaux:
 	latexmk -c
 	rm -rf *.aux *.fdb_latexmk *.log *.out *.bbl *.run.xml *.toc *.bcf
-	rm -rf *.pygstyle *.pygtex _minted*
+	rm -rf *.pygstyle *.pygtex _minted* *.pdf_tex svg-inkscape*
